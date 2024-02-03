@@ -9,6 +9,6 @@ services:
       - TEST_SUITE
     volumes:
       # - /home/selenium-docker/test-suites
-      # - /home/selenium-docker/test-output
-      - ./output/vendor-portal:/home/selenium-docker/test-output
-      - ./output/flight-reservation:/home/selenium-docker/test-output
+      - /home/selenium-docker/test-output
+      # - ./output/vendor-portal:/home/selenium-docker/test-output
+      # - ./output/flight-reservation:/home/selenium-docker/test-output
