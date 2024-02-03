@@ -4,22 +4,34 @@ pipeline{
 
     parameters {
         choice choices: ['chrome', 'firefox'], description: 'Select the browser', name: 'BROWSER'
+        choice(choices: ['vendor-portal.xml', 'flight-reservation.xml', 'other-test-suite.xml'], description: 'Select the test suite', name: 'TEST_SUITE')
+    }
+
+    environment {
+        GRID_COMPOSE_FILE = 'grid.yaml'
+        TEST_SUITES_COMPOSE_FILE = 'test-suites.yaml'
+        DOCKER_COMPOSE_OPTIONS = '--pull=always'
     }
 
     stages{
 
         stage('Start Grid'){
             steps{
-                sh "docker-compose -f grid.yaml up --scale ${params.BROWSER}=2 -d"
+                sh "docker-compose -f ${GRID_COMPOSE_FILE} up --scale ${params.BROWSER}=2 -d"
             }
         }
 
         stage('Run Test'){
             steps{
-                sh "docker-compose -f test-suites.yaml up --pull=always"
-                script {
-                    if(fileExists('output/flight-reservation/testng-failed.xml') || fileExists('output/vendor-portal/testng-failed.xml')){
-                        error('failed tests found')
+                  script {
+                    def suiteName = params.TEST_SUITE.replaceAll('.*/', '').replaceAll('.xml', '')
+                    def testOutputDir = "output/${suiteName}"
+                    def threadCount = getThreadCount(suiteName)
+
+                    sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} runTest ${DOCKER_COMPOSE_OPTIONS} -v ${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} -v ./${testOutputDir}:/home/selenium-docker/test-output"
+
+                    if (fileExists("${testOutputDir}/testng-failed.xml")) {
+                        error("Failed tests found in ${suiteName}")
                     }
                 }
             }
@@ -29,11 +41,28 @@ pipeline{
 
     post {
         always {
-            sh "docker-compose -f grid.yaml down"
-            sh "docker-compose -f test-suites.yaml down"
-            archiveArtifacts artifacts: 'output/flight-reservation/emailable-report.html', followSymlinks: false
-            archiveArtifacts artifacts: 'output/vendor-portal/emailable-report.html', followSymlinks: false
+            sh "docker-compose -f ${GRID_COMPOSE_FILE} down"
+            sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
+
+            archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
         }
     }
 
+}
+
+def getThreadCount(suiteName) {
+    // Implement logic to determine thread count based on suiteName if needed
+    return 3  // Default value, change as per your requirements
+}
+
+def fileExists(filePath) {
+    return fileExists(filePath, false)
+}
+
+def fileExists(filePath, followSymlinks) {
+    return fileExists(filePath, followSymlinks, 1)
+}
+
+def fileExists(filePath, followSymlinks, maxDepth) {
+    return new File(filePath).exists()
 }
