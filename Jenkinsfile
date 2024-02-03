@@ -44,9 +44,9 @@ pipeline{
             sh "docker-compose -f ${GRID_COMPOSE_FILE} down"
             sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
 
-            // archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
-            archiveArtifacts artifacts: 'output/flight-reservation/emailable-report.html', followSymlinks: false
-            archiveArtifacts artifacts: 'output/vendor-portal/emailable-report.html', followSymlinks: false
+            archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
+            // archiveArtifacts artifacts: 'output/flight-reservation/emailable-report.html', followSymlinks: false
+            // archiveArtifacts artifacts: 'output/vendor-portal/emailable-report.html', followSymlinks: false
         }
     }
 
