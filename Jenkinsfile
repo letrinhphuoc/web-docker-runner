@@ -28,7 +28,7 @@ pipeline{
                     def testOutputDir = "output/${suiteName}"
                     def threadCount = getThreadCount(suiteName)
 
-                    sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} runTest ${DOCKER_COMPOSE_OPTIONS} -v ${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} -v ./${testOutputDir}:/home/selenium-docker/test-output"
+                    sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --scale runTest=1 ${DOCKER_COMPOSE_OPTIONS} -v ${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} -v ./${testOutputDir}:/home/selenium-docker/test-output"
 
                     if (fileExists("${testOutputDir}/testng-failed.xml")) {
                         error("Failed tests found in ${suiteName}")
