@@ -28,8 +28,9 @@ pipeline{
                     def testOutputDir = "output/${suiteName}"
                     def threadCount = getThreadCount(suiteName)
 
-                    sh "TEST_SUITE=${params.TEST_SUITE} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volume /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName}.xml --volume ./${testOutputDir}:/home/selenium-docker/test-output"
+                    // sh "TEST_SUITE=${params.TEST_SUITE} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always"
+                    sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volumes /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName}.xml --volumes ./${testOutputDir}:/home/selenium-docker/test-output"
+                
 
 
                     // if (fileExists("${testOutputDir}/testng-failed.xml")) {
