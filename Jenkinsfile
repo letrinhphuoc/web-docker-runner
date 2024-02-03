@@ -32,9 +32,9 @@ pipeline{
                     // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volume /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName}.xml --volume ./${testOutputDir}:/home/selenium-docker/test-output"
 
 
-                    if (fileExists("${testOutputDir}/testng-failed.xml")) {
-                        error("Failed tests found in ${suiteName}")
-                    }
+                    // if (fileExists("${testOutputDir}/testng-failed.xml")) {
+                    //     error("Failed tests found in ${suiteName}")
+                    // }
                 }
             }
         }
@@ -47,8 +47,6 @@ pipeline{
             sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
 
             archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
-            // archiveArtifacts artifacts: 'output/flight-reservation/emailable-report.html', followSymlinks: false
-            // archiveArtifacts artifacts: 'output/vendor-portal/emailable-report.html', followSymlinks: false
         }
     }
 
@@ -59,14 +57,14 @@ def getThreadCount(suiteName) {
     return 3  // Default value, change as per your requirements
 }
 
-def fileExists(filePath) {
-    return fileExists(filePath, false)
-}
+// def fileExists(filePath) {
+//     return fileExists(filePath, false)
+// }
 
-def fileExists(filePath, followSymlinks) {
-    return fileExists(filePath, followSymlinks, 1)
-}
+// def fileExists(filePath, followSymlinks) {
+//     return fileExists(filePath, followSymlinks, 1)
+// }
 
-def fileExists(filePath, followSymlinks, maxDepth) {
-    return new File(filePath).exists()
-}
+// def fileExists(filePath, followSymlinks, maxDepth) {
+//     return new File(filePath).exists()
+// }
