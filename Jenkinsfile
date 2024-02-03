@@ -28,17 +28,11 @@ pipeline{
                     def testOutputDir = "output/${suiteName}"
                     def threadCount = getThreadCount(suiteName)
 
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --scale runTest=1 ${DOCKER_COMPOSE_OPTIONS} -v ${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} -v ./${testOutputDir}:/home/selenium-docker/test-output"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --scale runTest=1 ${DOCKER_COMPOSE_OPTIONS} -v ./${testOutputDir}:/home/selenium-docker/test-output"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up ${DOCKER_COMPOSE_OPTIONS}" 
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up ${DOCKER_COMPOSE_OPTIONS} -v /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} -v ./${testOutputDir}:/home/selenium-docker/test-output"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volume /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName} --volume ./${testOutputDir}:/home/selenium-docker/test-output ${DOCKER_COMPOSE_OPTIONS}"
                     sh "TEST_SUITE=${params.TEST_SUITE} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volume /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName}.xml --volume ./${testOutputDir}:/home/selenium-docker/test-output"
 
-                    // if (fileExists("${testOutputDir}/testng-failed.xml")) {
-                    //     error("Failed tests found in ${suiteName}")
-                    // }
+                    if (fileExists("${testOutputDir}/testng-failed.xml")) {
+                        error("Failed tests found in ${suiteName}")
+                    }
                 }
             }
         }
@@ -50,7 +44,9 @@ pipeline{
             sh "docker-compose -f ${GRID_COMPOSE_FILE} down"
             sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
 
-            archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
+            // archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
+            archiveArtifacts artifacts: 'output/flight-reservation/emailable-report.html', followSymlinks: false
+            archiveArtifacts artifacts: 'output/vendor-portal/emailable-report.html', followSymlinks: false
         }
     }
 
