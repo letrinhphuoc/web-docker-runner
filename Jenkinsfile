@@ -56,7 +56,7 @@ pipeline{
                       color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
                       message: "Test Suite: ${params.TEST_SUITE} - Build Result: ${currentBuild.result}",
                       teamDomain: 'james-automation',
-                      tokenCredentialId: 'A8bbjHasR16Ih4316rJS7Oj2'
+                      tokenCredentialId: '5TJfXN1RESkjqyIhNjqFPTwX'
             }
             
         }
