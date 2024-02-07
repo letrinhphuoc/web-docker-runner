@@ -49,6 +49,16 @@ pipeline{
 
             // archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
             archiveArtifacts artifacts: 'extent-report/**/ExtentReport.html', followSymlinks: false
+
+            script {
+            currentBuild.result = currentBuild.resultIsBetterOrEqualTo('UNSTABLE') ? 'SUCCESS' : 'FAILURE'
+            slackSend channel: 'jenkins',
+                      color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
+                      message: "Test Suite: ${params.TEST_SUITE} - Build Result: ${currentBuild.result}",
+                      teamDomain: 'james-automation',
+                      tokenCredentialId: 'A8bbjHasR16Ih4316rJS7Oj2'
+            }
+            
         }
     }
 
