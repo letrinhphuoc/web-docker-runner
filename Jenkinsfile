@@ -37,12 +37,18 @@ pipeline {
 
     post {
         always {
+            sh "docker-compose -f ${GRID_COMPOSE_FILE} down"
+            sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
+
+            archiveArtifacts artifacts: 'extent-report/**/ExtentReport.html', followSymlinks: false
+
             script {
                 def suiteName = params.TEST_SUITE.replaceAll('.*/', '').replaceAll('.xml', '')
                 def testOutputDir = "output/${suiteName}"
                 def threadCount = getThreadCount(suiteName)
 
                 currentBuild.result = currentBuild.resultIsBetterOrEqualTo('UNSTABLE') ? 'SUCCESS' : 'FAILURE'
+                // Define HTML report URL
                 def htmlReportUrl = "${JENKINS_URL}job/${JOB_NAME}/${BUILD_NUMBER}/artifact/extent-report/ExtentReport.html"
 
                 // Extract total tests, passes, failures, and skips from the log
