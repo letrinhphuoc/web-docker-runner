@@ -1,4 +1,4 @@
-pipeline{
+pipeline {
 
     agent any
 
@@ -13,29 +13,22 @@ pipeline{
         DOCKER_COMPOSE_OPTIONS = '--pull=always'
     }
 
-    stages{
+    stages {
 
-        stage('Start Grid'){
-            steps{
+        stage('Start Grid') {
+            steps {
                 sh "docker-compose -f ${GRID_COMPOSE_FILE} up --scale ${params.BROWSER}=2 -d"
             }
         }
 
-        stage('Run Test'){
-            steps{
-                  script {
+        stage('Run Test') {
+            steps {
+                script {
                     def suiteName = params.TEST_SUITE.replaceAll('.*/', '').replaceAll('.xml', '')
                     def testOutputDir = "output/${suiteName}"
                     def threadCount = getThreadCount(suiteName)
 
                     sh "TEST_SUITE=${params.TEST_SUITE} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always"
-                    // sh "TEST_SUITE=${suiteName} THREAD_COUNT=${threadCount} docker-compose -f ${TEST_SUITES_COMPOSE_FILE} up --pull=always --volumes /home/selenium-docker/test-suites/${params.TEST_SUITE}:/home/selenium-docker/test-output/${suiteName}.xml --volumes ./${testOutputDir}:/home/selenium-docker/test-output"
-                
-
-
-                    // if (fileExists("${testOutputDir}/testng-failed.xml")) {
-                    //     error("Failed tests found in ${suiteName}")
-                    // }
                 }
             }
         }
@@ -44,24 +37,78 @@ pipeline{
 
     post {
         always {
-            sh "docker-compose -f ${GRID_COMPOSE_FILE} down"
-            sh "docker-compose -f ${TEST_SUITES_COMPOSE_FILE} down"
-
-            // archiveArtifacts artifacts: 'output/**/emailable-report.html', followSymlinks: false
-            archiveArtifacts artifacts: 'extent-report/**/ExtentReport.html', followSymlinks: false
-
             script {
-            currentBuild.result = currentBuild.resultIsBetterOrEqualTo('UNSTABLE') ? 'SUCCESS' : 'FAILURE'
-            slackSend channel: 'jenkins',
-                      color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
-                      message: "Test Suite: ${params.TEST_SUITE} - Build Result: ${currentBuild.result}",
-                      teamDomain: 'james-automation',
-                      tokenCredentialId: '5TJfXN1RESkjqyIhNjqFPTwX'
+                def suiteName = params.TEST_SUITE.replaceAll('.*/', '').replaceAll('.xml', '')
+                def testOutputDir = "output/${suiteName}"
+                def threadCount = getThreadCount(suiteName)
+
+                currentBuild.result = currentBuild.resultIsBetterOrEqualTo('UNSTABLE') ? 'SUCCESS' : 'FAILURE'
+                def htmlReportUrl = "${JENKINS_URL}job/${JOB_NAME}/${BUILD_NUMBER}/artifact/extent-report/ExtentReport.html"
+
+                // Extract total tests, passes, failures, and skips from the log
+                def logContent = currentBuild.rawBuild.getLog(10000).join('\n')
+                def totalTests = extractTestCount(logContent, 'Total tests run: (\\d+)')
+                def passes = extractTestCount(logContent, 'Passes: (\\d+)')
+                def failures = extractTestCount(logContent, 'Failures: (\\d+)')
+                def skips = extractTestCount(logContent, 'Skips: (\\d+)')
+
+                slackSend(
+                    channel: 'jenkins',
+                    attachments: [
+                        [
+                            color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
+                            pretext: "*Test Execution Summary*",
+                            fallback: "Test Execution Summary: ${params.TEST_SUITE} - ${currentBuild.result}",
+                            fields: [
+                                [
+                                    title: "Test Suite",
+                                    value: params.TEST_SUITE,
+                                    short: true
+                                ],
+                                [
+                                    title: "Build Result",
+                                    value: currentBuild.result,
+                                    short: true
+                                ],
+                                [
+                                    title: "HTML Report",
+                                    value: "<$htmlReportUrl|View HTML Report>",
+                                    short: false
+                                ],
+                                [
+                                    title: "Total Tests",
+                                    value: totalTests,
+                                    short: true
+                                ],
+                                [
+                                    title: "Passes",
+                                    value: passes,
+                                    short: true
+                                ],
+                                [
+                                    title: "Failures",
+                                    value: failures,
+                                    short: true
+                                ],
+                                [
+                                    title: "Skips",
+                                    value: skips,
+                                    short: true
+                                ],
+                                [
+                                    title: "Pipeline ID",
+                                    value: "${BUILD_TAG}",
+                                    short: true
+                                ]
+                            ]
+                        ]
+                    ],
+                    teamDomain: 'james-automation',
+                    token: '5TJfXN1RESkjqyIhNjqFPTwX'
+                )
             }
-            
         }
     }
-
 }
 
 def getThreadCount(suiteName) {
@@ -69,14 +116,11 @@ def getThreadCount(suiteName) {
     return 3  // Default value, change as per your requirements
 }
 
-// def fileExists(filePath) {
-//     return fileExists(filePath, false)
-// }
-
-// def fileExists(filePath, followSymlinks) {
-//     return fileExists(filePath, followSymlinks, 1)
-// }
-
-// def fileExists(filePath, followSymlinks, maxDepth) {
-//     return new File(filePath).exists()
-// }
+def extractTestCount(logContent, pattern) {
+    def matcher = (logContent =~ pattern)
+    if (matcher.find()) {
+        return matcher.group(1)
+    } else {
+        return 'N/A'
+    }
+}
