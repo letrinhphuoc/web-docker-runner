@@ -97,7 +97,7 @@ pipeline {
                                 ],
                                 [
                                     title: "Pipeline ID",
-                                    value: "${BUILD_TAG}",
+                                    value: "${BUILD_TAG.replaceAll('jenkins-SELENIUM_DOCKER_RUNNER-', '')}",
                                     short: true
                                 ]
                             ]
